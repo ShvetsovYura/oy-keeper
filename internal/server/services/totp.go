@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"image/png"
 	"os"
-	"time"
 
 	"github.com/pquerna/otp"
 	"github.com/pquerna/otp/totp"
@@ -27,14 +26,14 @@ func (t *Totp) Generate(accountName) error {
 	if err != nil {
 		panic(err)
 	}
-	
+
 	t.key = key
 	return nil
 }
 
 func (t *Totp) Load(url string) error {
-	key, err:=otp.NewKeyFromURL(url)
-	if err!=nil{
+	key, err := otp.NewKeyFromURL(url)
+	if err != nil {
 		return err
 	}
 	t.key = key
@@ -54,8 +53,8 @@ func (t *Totp) GenerateImage() {
 
 func (t *Totp) validate(code string) (bool, error) {
 
-	valid, err := totp.Validate(code, t.key.Secret()
-		
+	valid, err := totp.Validate(code, t.key.Secret())
+
 	if err != nil {
 		fmt.Println(err.Error())
 	}

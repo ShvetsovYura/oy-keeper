@@ -1,0 +1,23 @@
+syntax = "proto3";
+
+package proto;
+option go_package = "oy-keeper/proto";
+
+message RecordCreateRequest {
+	string item = 1;
+}
+
+message RecordCreateResponse {
+
+}
+
+message AttrbuteCreateRequest {
+    string name = 1;
+    string value = 2;
+}
+
+message AttributeCreateResponse {
+    string name = 1;
+    string value = 2;
+}
+
