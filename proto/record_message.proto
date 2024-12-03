@@ -1,23 +1,73 @@
 syntax = "proto3";
 
 package proto;
-option go_package = "oy-keeper/proto";
+option go_package = "oykeeper/proto";
 
-message RecordCreateRequest {
-	string item = 1;
+message RecordReq {
+	string uuid = 1;
+    string name = 2;
+    optional string username = 3;
+    optional string password = 4;
+    optional string url = 5;
+    optional string expired_at = 6;
+    string user_uuid  = 7;
+    optional string card_num = 8;
+    optional string description = 9;
+    int32 version = 10;
+
+    repeated AttributeInfo attributes = 11;
+    repeated FileInfo files = 12;
+}
+message RecordRemoveReq {
+    string uuid = 1;
 }
 
-message RecordCreateResponse {
+message RecordResp {}
 
+message FileInfo {
+    string uuid = 1;
+    string path = 2;
+    string hash = 3;
+    uint64 size = 4;
+    string name = 5;
+    optional string meta = 6;
+}
+message AttributeInfo {
+    string uuid = 1;
+    string name = 2;
+    string value = 3;
 }
 
-message AttrbuteCreateRequest {
+
+message AttrbuteReq {
     string name = 1;
     string value = 2;
 }
 
-message AttributeCreateResponse {
+message AttributeCreateResp {
     string name = 1;
     string value = 2;
 }
 
+message UserRecordsReq {
+    string uuid = 1;
+}
+message UserRecordsResp {
+    repeated RecordReq records = 1;
+}
+
+message UserFileInfosReq{
+    string uuid = 1;
+}
+
+message UserFileInfosResp {
+    repeated FileInfo file_infos = 1;
+}
+
+service RecordService {
+    rpc CreateRecord(RecordReq) returns (RecordResp);
+    rpc ChangeRecord(RecordReq) returns (RecordResp);
+    rpc RemoiveRecord(RecordRemoveReq) returns (RecordResp);
+    rpc GetUserRecords(UserRecordsReq) returns (UserRecordsResp);
+    rpc GetUserFileInfos(UserFileInfosReq) returns (UserFileInfosResp);
+}

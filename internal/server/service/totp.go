@@ -1,8 +1,7 @@
-package services
+package service
 
 import (
 	"bytes"
-	"fmt"
 	"image/png"
 	"os"
 
@@ -18,7 +17,7 @@ func New(accountName string) *Totp {
 	return &Totp{}
 }
 
-func (t *Totp) Generate(accountName) error {
+func (t *Totp) Generate(accountName string) error {
 	key, err := totp.Generate(totp.GenerateOpts{
 		Issuer:      "OyKeeper",
 		AccountName: accountName,
@@ -53,16 +52,16 @@ func (t *Totp) GenerateImage() {
 
 func (t *Totp) validate(code string) (bool, error) {
 
-	valid, err := totp.Validate(code, t.key.Secret())
-
-	if err != nil {
-		fmt.Println(err.Error())
-	}
-	if valid {
-		println("Valid passcode!")
-		os.Exit(0)
-	} else {
-		println("Invalid passcode!")
-		os.Exit(1)
-	}
+	valid := totp.Validate(code, t.key.Secret())
+	return valid, nil
+	// if err != nil {
+	// 	fmt.Println(err.Error())
+	// }
+	// if valid {
+	// 	println("Valid passcode!")
+	// 	os.Exit(0)
+	// } else {
+	// 	println("Invalid passcode!")
+	// 	os.Exit(1)
+	// }
 }

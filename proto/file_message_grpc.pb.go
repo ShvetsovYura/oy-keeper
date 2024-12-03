@@ -2,7 +2,7 @@
 // versions:
 // - protoc-gen-go-grpc v1.5.1
 // - protoc             v5.28.3
-// source: proto/upload_service.proto
+// source: proto/file_message.proto
 
 package proto
 
@@ -19,109 +19,8 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	RecordService_SendItem_FullMethodName = "/proto.RecordService/SendItem"
-)
-
-// RecordServiceClient is the client API for RecordService service.
-//
-// For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
-type RecordServiceClient interface {
-	SendItem(ctx context.Context, in *RecordCreateRequest, opts ...grpc.CallOption) (*RecordCreateResponse, error)
-}
-
-type recordServiceClient struct {
-	cc grpc.ClientConnInterface
-}
-
-func NewRecordServiceClient(cc grpc.ClientConnInterface) RecordServiceClient {
-	return &recordServiceClient{cc}
-}
-
-func (c *recordServiceClient) SendItem(ctx context.Context, in *RecordCreateRequest, opts ...grpc.CallOption) (*RecordCreateResponse, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(RecordCreateResponse)
-	err := c.cc.Invoke(ctx, RecordService_SendItem_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-// RecordServiceServer is the server API for RecordService service.
-// All implementations must embed UnimplementedRecordServiceServer
-// for forward compatibility.
-type RecordServiceServer interface {
-	SendItem(context.Context, *RecordCreateRequest) (*RecordCreateResponse, error)
-	mustEmbedUnimplementedRecordServiceServer()
-}
-
-// UnimplementedRecordServiceServer must be embedded to have
-// forward compatible implementations.
-//
-// NOTE: this should be embedded by value instead of pointer to avoid a nil
-// pointer dereference when methods are called.
-type UnimplementedRecordServiceServer struct{}
-
-func (UnimplementedRecordServiceServer) SendItem(context.Context, *RecordCreateRequest) (*RecordCreateResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method SendItem not implemented")
-}
-func (UnimplementedRecordServiceServer) mustEmbedUnimplementedRecordServiceServer() {}
-func (UnimplementedRecordServiceServer) testEmbeddedByValue()                       {}
-
-// UnsafeRecordServiceServer may be embedded to opt out of forward compatibility for this service.
-// Use of this interface is not recommended, as added methods to RecordServiceServer will
-// result in compilation errors.
-type UnsafeRecordServiceServer interface {
-	mustEmbedUnimplementedRecordServiceServer()
-}
-
-func RegisterRecordServiceServer(s grpc.ServiceRegistrar, srv RecordServiceServer) {
-	// If the following call pancis, it indicates UnimplementedRecordServiceServer was
-	// embedded by pointer and is nil.  This will cause panics if an
-	// unimplemented method is ever invoked, so we test this at initialization
-	// time to prevent it from happening at runtime later due to I/O.
-	if t, ok := srv.(interface{ testEmbeddedByValue() }); ok {
-		t.testEmbeddedByValue()
-	}
-	s.RegisterService(&RecordService_ServiceDesc, srv)
-}
-
-func _RecordService_SendItem_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(RecordCreateRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(RecordServiceServer).SendItem(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: RecordService_SendItem_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(RecordServiceServer).SendItem(ctx, req.(*RecordCreateRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-// RecordService_ServiceDesc is the grpc.ServiceDesc for RecordService service.
-// It's only intended for direct use with grpc.RegisterService,
-// and not to be introspected or modified (even as a copy)
-var RecordService_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "proto.RecordService",
-	HandlerType: (*RecordServiceServer)(nil),
-	Methods: []grpc.MethodDesc{
-		{
-			MethodName: "SendItem",
-			Handler:    _RecordService_SendItem_Handler,
-		},
-	},
-	Streams:  []grpc.StreamDesc{},
-	Metadata: "proto/upload_service.proto",
-}
-
-const (
-	FileService_Upload_FullMethodName = "/proto.FileService/Upload"
+	FileService_Upload_FullMethodName   = "/proto.FileService/Upload"
+	FileService_Download_FullMethodName = "/proto.FileService/Download"
 )
 
 // FileServiceClient is the client API for FileService service.
@@ -129,6 +28,7 @@ const (
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type FileServiceClient interface {
 	Upload(ctx context.Context, opts ...grpc.CallOption) (grpc.ClientStreamingClient[FileUploadRequest, FileUploadResponse], error)
+	Download(ctx context.Context, in *FileDownloadReq, opts ...grpc.CallOption) (grpc.ServerStreamingClient[FileDownloadResp], error)
 }
 
 type fileServiceClient struct {
@@ -152,11 +52,31 @@ func (c *fileServiceClient) Upload(ctx context.Context, opts ...grpc.CallOption)
 // This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
 type FileService_UploadClient = grpc.ClientStreamingClient[FileUploadRequest, FileUploadResponse]
 
+func (c *fileServiceClient) Download(ctx context.Context, in *FileDownloadReq, opts ...grpc.CallOption) (grpc.ServerStreamingClient[FileDownloadResp], error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	stream, err := c.cc.NewStream(ctx, &FileService_ServiceDesc.Streams[1], FileService_Download_FullMethodName, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &grpc.GenericClientStream[FileDownloadReq, FileDownloadResp]{ClientStream: stream}
+	if err := x.ClientStream.SendMsg(in); err != nil {
+		return nil, err
+	}
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	return x, nil
+}
+
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type FileService_DownloadClient = grpc.ServerStreamingClient[FileDownloadResp]
+
 // FileServiceServer is the server API for FileService service.
 // All implementations must embed UnimplementedFileServiceServer
 // for forward compatibility.
 type FileServiceServer interface {
 	Upload(grpc.ClientStreamingServer[FileUploadRequest, FileUploadResponse]) error
+	Download(*FileDownloadReq, grpc.ServerStreamingServer[FileDownloadResp]) error
 	mustEmbedUnimplementedFileServiceServer()
 }
 
@@ -169,6 +89,9 @@ type UnimplementedFileServiceServer struct{}
 
 func (UnimplementedFileServiceServer) Upload(grpc.ClientStreamingServer[FileUploadRequest, FileUploadResponse]) error {
 	return status.Errorf(codes.Unimplemented, "method Upload not implemented")
+}
+func (UnimplementedFileServiceServer) Download(*FileDownloadReq, grpc.ServerStreamingServer[FileDownloadResp]) error {
+	return status.Errorf(codes.Unimplemented, "method Download not implemented")
 }
 func (UnimplementedFileServiceServer) mustEmbedUnimplementedFileServiceServer() {}
 func (UnimplementedFileServiceServer) testEmbeddedByValue()                     {}
@@ -198,6 +121,17 @@ func _FileService_Upload_Handler(srv interface{}, stream grpc.ServerStream) erro
 // This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
 type FileService_UploadServer = grpc.ClientStreamingServer[FileUploadRequest, FileUploadResponse]
 
+func _FileService_Download_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(FileDownloadReq)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
+	}
+	return srv.(FileServiceServer).Download(m, &grpc.GenericServerStream[FileDownloadReq, FileDownloadResp]{ServerStream: stream})
+}
+
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type FileService_DownloadServer = grpc.ServerStreamingServer[FileDownloadResp]
+
 // FileService_ServiceDesc is the grpc.ServiceDesc for FileService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -211,6 +145,11 @@ var FileService_ServiceDesc = grpc.ServiceDesc{
 			Handler:       _FileService_Upload_Handler,
 			ClientStreams: true,
 		},
+		{
+			StreamName:    "Download",
+			Handler:       _FileService_Download_Handler,
+			ServerStreams: true,
+		},
 	},
-	Metadata: "proto/upload_service.proto",
+	Metadata: "proto/file_message.proto",
 }

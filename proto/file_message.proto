@@ -1,7 +1,7 @@
 syntax = "proto3";
 
 package proto;
-option go_package = "oy-keeper/proto";
+option go_package = "oykeeper/proto";
 
 message FileUploadRequest {
     string file_name  = 1;
@@ -9,7 +9,21 @@ message FileUploadRequest {
 }
 
 message FileUploadResponse {
-    string hassh = 1;
+    string hash = 1;
     uint32 size = 2;
 }
 
+message FileDownloadReq {
+    string uuid = 1;
+}
+message FileDownloadResp {
+    string hash = 1;
+    uint32 size = 2;
+    string name = 3;
+}
+
+
+service FileService {
+    rpc Upload(stream FileUploadRequest) returns (FileUploadResponse);
+    rpc Download(FileDownloadReq) returns (stream FileDownloadResp);
+}
