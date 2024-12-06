@@ -40,7 +40,7 @@ func (s *Server) Run(ctx context.Context) error {
 		panic(err.Error())
 	}
 	recordStore := store.NewRecordStore(conn)
-	pb.RegisterFileServiceServer(&s.server, service.NewFileUploadHandler())
+	pb.RegisterFileServiceServer(&s.server, service.NewFileService("hoho"))
 	pb.RegisterRecordServiceServer(&s.server, service.NewRecordService(recordStore))
 
 	listen, err := net.Listen("tcp", s.addr)

@@ -21,7 +21,6 @@ message RecordReq {
 message RecordRemoveReq {
     string uuid = 1;
 }
-message RecordRemoveResp{}
 
 message RecordResp {}
 

@@ -2,16 +2,16 @@ package client
 
 import (
 	"context"
-	"fmt"
 	"io"
 	"log/slog"
 	"os"
 
 	"github.com/ShvetsovYura/oykeeper/internal/logger"
+	"github.com/ShvetsovYura/oykeeper/internal/utils"
 	pb "github.com/ShvetsovYura/oykeeper/proto"
-	"github.com/google/uuid"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/grpc/metadata"
 )
 
 type Client struct {
@@ -38,47 +38,50 @@ func (c *Client) Close() error {
 }
 
 func (c *Client) CreateRecord(ctx context.Context) error {
-	recordUuid, _ := uuid.NewRandom()
-	userUuid, _ := uuid.NewRandom()
-	fileUuid, _ := uuid.NewRandom()
-	attr1Uuid, _ := uuid.NewRandom()
-	attr2Uuid, _ := uuid.NewRandom()
-	resp, err := c.recordService.CreateRecord(ctx, &pb.RecordReq{
-		Uuid:     recordUuid.String(),
-		UserUuid: userUuid.String(),
-		Version:  "1",
-		Attributes: []*pb.AttributeInfo{
-			{
-				Uuid:  attr1Uuid.String(),
-				Name:  "attr1",
-				Value: "value1",
-			}, {
-				Uuid:  attr2Uuid.String(),
-				Name:  "attr2",
-				Value: "value2",
-			},
-		},
-		Files: []*pb.FileInfo{{
-			Name: "file1",
-			Uuid: fileUuid.String(),
-			Path: "",
-			Hash: "hash",
-			Size: 1234,
-		}},
-	})
-	if err != nil {
-		fmt.Printf("error: %s \n", err.Error())
-	}
-	fmt.Printf("resp: %v\n", resp)
+
+	// resp, err := c.recordService.CreateRecord(ctx, &pb.RecordReq{
+	// 	Uuid:     "d9651da1-6945-43ba-a730-544c5d17ad4f",
+	// 	UserUuid: "21bd249e-77c7-4bf0-b78f-dd33d38ac54f",
+	// 	Version:  2,
+	// 	Attributes: []*pb.AttributeInfo{
+	// 		{
+	// 			Uuid:  "59fb3cd6-64c3-4f9c-ba74-b8bc24b8a57e",
+	// 			Name:  "attr1",
+	// 			Value: "value1",
+	// 		}, {
+	// 			Uuid:  "b7c72694-acd0-43cb-b57a-f43c147e6620",
+	// 			Name:  "attr2",
+	// 			Value: "value2",
+	// 		},
+	// 	},
+	// 	Files: []*pb.FileInfo{{
+	// 		Name: "file1",
+	// 		Uuid: "ef4ad74b-c7ad-4268-a6e8-6086467721bf",
+	// 		Path: *"fs",
+	// 		Hash: "hash",
+	// 		Size: 1234,
+	// 	}},
+	// })
+	// if err != nil {
+	// 	fmt.Printf("error: %s \n", err.Error())
+	// }
+	// fmt.Printf("resp: %v\n", resp)
 	return nil
 }
 
 func (c *Client) Upload(ctx context.Context) error {
 	logger.Log.Debug("start upload file")
-	stream, err := c.uploadService.Upload(ctx)
+	hash, err := utils.MD5Sum("cmds")
 	if err != nil {
 		return err
 	}
+	md := metadata.New(map[string]string{"hash": hash})
+	outCtx := metadata.NewOutgoingContext(ctx, md)
+	stream, err := c.uploadService.Upload(outCtx)
+	if err != nil {
+		return err
+	}
+
 	file, err := os.Open("cmds")
 	if err != nil {
 		return err
@@ -101,10 +104,9 @@ func (c *Client) Upload(ctx context.Context) error {
 		logger.Log.Info("sent batch", slog.Int("batch_number", batchNumber), slog.Int("size", len(chunk)))
 		batchNumber += 1
 	}
-	res, err := stream.CloseAndRecv()
+	_, err = stream.CloseAndRecv()
 	if err != nil {
 		return err
 	}
-	logger.Log.Info("sent done", slog.Int("size", int(res.GetSize())), slog.String("name", "hoho"))
 	return nil
 }
