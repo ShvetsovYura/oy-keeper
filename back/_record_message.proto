@@ -16,7 +16,7 @@ message RecordReq {
     int32 version = 10;
 
     repeated AttributeInfo attributes = 11;
-    repeated FileInfo files = 12;
+    repeated FileInfoReq files = 12;
 }
 message RecordRemoveReq {
     string uuid = 1;
@@ -51,10 +51,18 @@ message UserRecordsResp {
 
 message FileInfo {
     string uuid = 1;
-    optional string path = 2;
+    string path = 2;
     string hash = 3;
     uint64 size = 4;
     string name = 5;
+    optional string meta = 6;
+}
+
+message FileInfoReq {
+    string uuid = 1;
+    string path = 2;
+    string hash = 3;
+    uint64 size = 4;
     optional string meta = 6;
 }
 

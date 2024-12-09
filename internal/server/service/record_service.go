@@ -76,7 +76,8 @@ func (r *RecordService) GetUserRecords(ctx context.Context, in *pb.UserRecordsRe
 func (r *RecordService) CreateRecord(ctx context.Context, in *pb.RecordReq) (*pb.RecordResp, error) {
 	_, err := r.recordStore.GetRecordVersion(ctx, in.Uuid, uint32(in.Version))
 	if err != nil {
-		if !pgerrcode.IsNoData(err.Error()) {
+		logger.Log.Debug("error on get record version", slog.String("msg", err.Error()))
+		if err.Error() != "sql: no rows in result set" {
 			return nil, err
 		}
 

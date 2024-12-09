@@ -28,7 +28,7 @@ func New() *Server {
 }
 
 func (s *Server) Run(ctx context.Context) error {
-
+	fileStoragePath := "files"
 	dbDSN := "postgres://lbman:lbman@localhost:5432/lb1"
 	conn, err := pgxpool.New(ctx, dbDSN)
 	if err != nil {
@@ -40,7 +40,7 @@ func (s *Server) Run(ctx context.Context) error {
 		panic(err.Error())
 	}
 	recordStore := store.NewRecordStore(conn)
-	pb.RegisterFileServiceServer(&s.server, service.NewFileService("hoho"))
+	pb.RegisterFileServiceServer(&s.server, service.NewFileService(fileStoragePath))
 	pb.RegisterRecordServiceServer(&s.server, service.NewRecordService(recordStore))
 
 	listen, err := net.Listen("tcp", s.addr)

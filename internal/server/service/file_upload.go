@@ -6,6 +6,7 @@ import (
 	"io"
 	"log/slog"
 	"os"
+	"path"
 	"path/filepath"
 
 	"github.com/ShvetsovYura/oykeeper/internal/logger"
@@ -40,10 +41,14 @@ func (s *FileService) Upload(stream pb.FileService_UploadServer) error {
 			logger.Log.Error(err.Error())
 		}
 	}()
+	var destPath string
+
 	for {
 		req, err := stream.Recv()
 		if file.FilePath == "" {
-			file.SetFile(req.GetFileName(), s.path_dir)
+			destPath = path.Join(s.path_dir, req.RecordUuid)
+			fn := inHash + "__" + req.GetFileName()
+			file.SetFile(fn, destPath)
 		}
 		if err == io.EOF {
 			break
@@ -67,7 +72,9 @@ func (s *FileService) Upload(stream pb.FileService_UploadServer) error {
 		return errors.New("Hashes is not equals or error hash")
 	}
 	logger.Log.Info("file received", slog.String("name", fileName), slog.String("hash", hash))
-	return stream.SendAndClose(&pb.FileUploadResponse{})
+	return stream.SendAndClose(&pb.FileUploadResponse{
+		Size: totalSize, Path: destPath + "/" + fileName, Hash: hash,
+	})
 }
 
 func (s *FileService) removeFile(path string) error {

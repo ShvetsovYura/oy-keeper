@@ -57,7 +57,7 @@ func (s *RecordStore) UpsertRecord(ctx context.Context, record *pb.RecordReq, at
 			expired_at = EXCLUDED.expired_at, cardnum=EXCLUDED.cardnum, description=EXCLUDED.description, 
 			"version"=EXCLUDED."version", updated_at=now()
 			;
-	`, record.Uuid, record.Name, record.Username, record.Password, record.Url, record.ExpiredAt, time.Now(), time.Now(), record.UserUuid, record.CardNum, record.Description, record.Version+1)
+	`, record.Uuid, record.Name, record.Username, record.Password, record.Url, nil, time.Now(), time.Now(), record.UserUuid, record.CardNum, record.Description, record.Version+1)
 
 	if err != nil {
 		logger.Log.Error(err.Error())

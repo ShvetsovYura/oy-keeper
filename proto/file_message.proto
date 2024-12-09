@@ -5,12 +5,15 @@ option go_package = "oykeeper/proto";
 
 message FileUploadRequest {
     string file_name  = 1;
-    string file_uuid = 2;
-    string record_uuid = 3;
-    bytes chunk = 4;
+    string record_uuid = 2;
+    bytes chunk = 3;
 }
 
-message FileUploadResponse {}
+message FileUploadResponse {
+    string hash = 1;
+    uint32 size = 2;
+    string path = 3;
+}
 
 message FileDownloadReq {
     string uuid = 1;

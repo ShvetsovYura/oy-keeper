@@ -2,9 +2,11 @@ package client
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"log/slog"
 	"os"
+	"path/filepath"
 
 	"github.com/ShvetsovYura/oykeeper/internal/logger"
 	"github.com/ShvetsovYura/oykeeper/internal/utils"
@@ -39,53 +41,67 @@ func (c *Client) Close() error {
 
 func (c *Client) CreateRecord(ctx context.Context) error {
 
-	// resp, err := c.recordService.CreateRecord(ctx, &pb.RecordReq{
-	// 	Uuid:     "d9651da1-6945-43ba-a730-544c5d17ad4f",
-	// 	UserUuid: "21bd249e-77c7-4bf0-b78f-dd33d38ac54f",
-	// 	Version:  2,
-	// 	Attributes: []*pb.AttributeInfo{
-	// 		{
-	// 			Uuid:  "59fb3cd6-64c3-4f9c-ba74-b8bc24b8a57e",
-	// 			Name:  "attr1",
-	// 			Value: "value1",
-	// 		}, {
-	// 			Uuid:  "b7c72694-acd0-43cb-b57a-f43c147e6620",
-	// 			Name:  "attr2",
-	// 			Value: "value2",
-	// 		},
-	// 	},
-	// 	Files: []*pb.FileInfo{{
-	// 		Name: "file1",
-	// 		Uuid: "ef4ad74b-c7ad-4268-a6e8-6086467721bf",
-	// 		Path: *"fs",
-	// 		Hash: "hash",
-	// 		Size: 1234,
-	// 	}},
-	// })
-	// if err != nil {
-	// 	fmt.Printf("error: %s \n", err.Error())
-	// }
-	// fmt.Printf("resp: %v\n", resp)
+	recordUuid := "44eb365b-3a88-4bed-a59b-bce4ceffcde6"
+	req := &pb.RecordReq{
+		Uuid:        recordUuid,
+		Name:        "",
+		Username:    new(string),
+		Password:    new(string),
+		Url:         new(string),
+		ExpiredAt:   new(string),
+		UserUuid:    "21bd249e-77c7-4bf0-b78f-dd33d38ac54f",
+		CardNum:     new(string),
+		Description: new(string),
+		Version:     2,
+		Attributes:  []*pb.AttributeInfo{{Uuid: "6efe0930-d7aa-42b2-bc54-300655597fd5", Name: "mycoffe", Value: "espresso"}, {Uuid: "64a4b557-61f4-49a3-b4be-dc7ee5eda151", Name: "branch", Value: "toast"}},
+		// Files:       [] //[]*pb.FileInfoReq{{Path: "/Users/21184534/Documents/practicum/oykeeper/cmd/client/mybin.zip"}},
+	}
+	paths := []string{"/Users/21184534/Documents/practicum/oykeeper/cmd/client/mybin.zip"}
+
+	for _, p := range paths {
+		ur, err := c.Upload(ctx, p, recordUuid)
+		if err == nil {
+			req.Files = append(req.Files, &pb.FileInfo{
+				Uuid: "46628b5b-c2c7-4575-8d22-154c482e2369",
+				Hash: ur.Hash,
+				Path: &ur.Path,
+				Size: uint64(ur.Size),
+				Name: "hohoh",
+			})
+		}
+	}
+
+	resp, err := c.recordService.CreateRecord(ctx, req)
+	if err != nil {
+		fmt.Printf("error: %s \n", err.Error())
+	}
+
+	fmt.Printf("resp: %v\n", resp)
 	return nil
 }
 
-func (c *Client) Upload(ctx context.Context) error {
-	logger.Log.Debug("start upload file")
-	hash, err := utils.MD5Sum("cmds")
+func (c *Client) Upload(ctx context.Context, path string, recordUuid string) (*pb.FileUploadResponse, error) {
+	logger.Log.Debug("start upload file", slog.String("path", path))
+	hash, err := utils.MD5Sum(path)
 	if err != nil {
-		return err
+		logger.Log.Error(err.Error())
+		return nil, err
 	}
 	md := metadata.New(map[string]string{"hash": hash})
 	outCtx := metadata.NewOutgoingContext(ctx, md)
 	stream, err := c.uploadService.Upload(outCtx)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	file, err := os.Open("cmds")
+	file, err := os.Open(path)
 	if err != nil {
-		return err
+		return nil, err
 	}
+	defer func() {
+		file.Close()
+	}()
+	filename := filepath.Base(path)
 	buf := make([]byte, 1024*1024)
 	batchNumber := 1
 	for {
@@ -94,19 +110,20 @@ func (c *Client) Upload(ctx context.Context) error {
 			break
 		}
 		if err != nil {
-			return err
+			return nil, err
 		}
 
 		chunk := buf[:num]
-		if err := stream.Send(&pb.FileUploadRequest{FileName: "cmds", Chunk: chunk}); err != nil {
-			return err
+
+		if err := stream.Send(&pb.FileUploadRequest{FileName: filename, RecordUuid: recordUuid, Chunk: chunk}); err != nil {
+			return nil, err
 		}
 		logger.Log.Info("sent batch", slog.Int("batch_number", batchNumber), slog.Int("size", len(chunk)))
 		batchNumber += 1
 	}
-	_, err = stream.CloseAndRecv()
+	resp, err := stream.CloseAndRecv()
 	if err != nil {
-		return err
+		return nil, err
 	}
-	return nil
+	return resp, nil
 }
