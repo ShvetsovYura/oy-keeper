@@ -50,6 +50,21 @@ CREATE TABLE "attribute" (
 );
 -- "attribute" внешние ключи
 ALTER TABLE "attribute" ADD CONSTRAINT attribute_item_fk FOREIGN KEY (item_uuid) REFERENCES item("uuid") ON DELETE CASCADE;
+
+
+CREATE TABLE "user" (
+	"uuid" uuid NOT NULL,
+	login varchar NOT NULL,
+	otp_secret varchar NOT NULL,
+	otp_auth varchar NOT NULL,
+	otp_verified bool DEFAULT false NOT NULL,
+	is_active varchar DEFAULT true NOT NULL,
+	created_at date NOT NULL,
+	updated_at date NOT NULL,
+	CONSTRAINT user_pk PRIMARY KEY (uuid),
+	CONSTRAINT user_unique UNIQUE (login)
+);
+
 -- +goose StatementEnd
 
 -- +goose Down
@@ -57,4 +72,5 @@ ALTER TABLE "attribute" ADD CONSTRAINT attribute_item_fk FOREIGN KEY (item_uuid)
 DROP TABLE "file";
 DROP TABLE "attribute";
 DROP TABLE "item";
+DROP TABLE "user";
 -- +goose StatementEnd

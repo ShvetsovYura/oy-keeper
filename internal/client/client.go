@@ -8,6 +8,7 @@ import (
 	"os"
 	"path/filepath"
 
+	service "github.com/ShvetsovYura/oykeeper/internal/client/services"
 	"github.com/ShvetsovYura/oykeeper/internal/logger"
 	"github.com/ShvetsovYura/oykeeper/internal/utils"
 	pb "github.com/ShvetsovYura/oykeeper/proto"
@@ -20,6 +21,7 @@ type Client struct {
 	conn          *grpc.ClientConn
 	uploadService pb.FileServiceClient
 	recordService pb.RecordServiceClient
+	userService   *service.UserService
 }
 
 func New(addr string) *Client {
@@ -32,6 +34,7 @@ func New(addr string) *Client {
 		conn:          conn,
 		uploadService: pb.NewFileServiceClient(conn),
 		recordService: pb.NewRecordServiceClient(conn),
+		userService:   service.NewUserService(service.NewTotp()),
 	}
 }
 
@@ -126,4 +129,9 @@ func (c *Client) Upload(ctx context.Context, path string, recordUuid string) (*p
 		return nil, err
 	}
 	return resp, nil
+}
+
+func (s *Client) Register(ctx context.Context, login string) error {
+	s.userService.Register(ctx, login)
+	return nil
 }

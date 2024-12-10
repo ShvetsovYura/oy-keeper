@@ -13,14 +13,14 @@ type Totp struct {
 	key *otp.Key
 }
 
-func New(accountName string) *Totp {
+func NewTotp() *Totp {
 	return &Totp{}
 }
 
-func (t *Totp) Generate(accountName string) error {
+func (t *Totp) Generate(login string) error {
 	key, err := totp.Generate(totp.GenerateOpts{
 		Issuer:      "OyKeeper",
-		AccountName: accountName,
+		AccountName: login,
 	})
 	if err != nil {
 		panic(err)
@@ -39,10 +39,14 @@ func (t *Totp) Load(url string) error {
 	return nil
 }
 
+func (t *Totp) GetKey() *otp.Key {
+	return t.key
+}
+
 func (t *Totp) GenerateImage() {
 	var buf bytes.Buffer
 
-	img, err := t.key.Image(200, 200)
+	img, err := t.key.Image(100, 100)
 	if err != nil {
 		panic(err)
 	}
@@ -50,18 +54,6 @@ func (t *Totp) GenerateImage() {
 	os.WriteFile("qr-code.png", buf.Bytes(), 0644)
 }
 
-func (t *Totp) validate(code string) (bool, error) {
-
-	valid := totp.Validate(code, t.key.Secret())
-	return valid, nil
-	// if err != nil {
-	// 	fmt.Println(err.Error())
-	// }
-	// if valid {
-	// 	println("Valid passcode!")
-	// 	os.Exit(0)
-	// } else {
-	// 	println("Invalid passcode!")
-	// 	os.Exit(1)
-	// }
+func (t *Totp) Validate(code string) bool {
+	return totp.Validate(code, t.key.Secret())
 }

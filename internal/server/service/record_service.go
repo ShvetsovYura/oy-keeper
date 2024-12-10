@@ -6,6 +6,7 @@ import (
 
 	"github.com/ShvetsovYura/oykeeper/internal/logger"
 	"github.com/ShvetsovYura/oykeeper/internal/server/store"
+	"github.com/ShvetsovYura/oykeeper/internal/server/store/models"
 	"github.com/ShvetsovYura/oykeeper/internal/utils"
 	pb "github.com/ShvetsovYura/oykeeper/proto"
 	"github.com/jackc/pgerrcode"
@@ -30,20 +31,20 @@ func (r *RecordService) GetUserRecords(ctx context.Context, in *pb.UserRecordsRe
 	var response = pb.UserRecordsResp{Uuid: in.Uuid, Records: []*pb.RecordInfo{}}
 
 	for _, r := range rr {
-		filteredAttrs := utils.Filter(aa, func(item store.AttributeDB) bool {
+		filteredAttrs := utils.Filter(aa, func(item models.AttributeDB) bool {
 			return item.ItemUuid == r.Uuid
 		})
-		attrs := utils.Map(filteredAttrs, func(item store.AttributeDB) *pb.AttributeInfo {
+		attrs := utils.Map(filteredAttrs, func(item models.AttributeDB) *pb.AttributeInfo {
 			return &pb.AttributeInfo{
 				Uuid:  item.Uuid,
 				Name:  item.Name,
 				Value: item.Value,
 			}
 		})
-		filteredFilesInfo := utils.Filter(ff, func(item store.FileDB) bool {
+		filteredFilesInfo := utils.Filter(ff, func(item models.FileDB) bool {
 			return item.ItemUuid == r.Uuid
 		})
-		files := utils.Map(filteredFilesInfo, func(f store.FileDB) *pb.FileInfo {
+		files := utils.Map(filteredFilesInfo, func(f models.FileDB) *pb.FileInfo {
 			return &pb.FileInfo{
 				Uuid: f.Uuid,
 				Path: f.Path,

@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/ShvetsovYura/oykeeper/internal/logger"
+	"github.com/ShvetsovYura/oykeeper/internal/server/store/models"
 	pb "github.com/ShvetsovYura/oykeeper/proto"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -27,8 +28,8 @@ func NewRecordStore(db *pgxpool.Pool) *RecordStore {
 		db: db,
 	}
 }
-func (s *RecordStore) GetRecordVersion(ctx context.Context, recordUUID string, recordVersion uint32) (*RecordByUUID, error) {
-	r, err := pgxscan.One(ctx, s.db, scan.StructMapper[*RecordByUUID](), "SELECT uuid, version FROM item WHERE uuid=$1", recordUUID)
+func (s *RecordStore) GetRecordVersion(ctx context.Context, recordUUID string, recordVersion uint32) (*models.RecordByUUID, error) {
+	r, err := pgxscan.One(ctx, s.db, scan.StructMapper[*models.RecordByUUID](), "SELECT uuid, version FROM item WHERE uuid=$1", recordUUID)
 
 	if err != nil {
 		return nil, err
@@ -126,8 +127,8 @@ func upsertRecordFileInfos(ctx context.Context, tx pgx.Tx, record *pb.RecordReq,
 	return nil
 }
 
-func (s *RecordStore) FetchUserRecords(ctx context.Context, userUUID string) ([]RecordDB, error) {
-	recs, err := pgxscan.All(ctx, s.db, scan.StructMapper[RecordDB](),
+func (s *RecordStore) FetchUserRecords(ctx context.Context, userUUID string) ([]models.RecordDB, error) {
+	recs, err := pgxscan.All(ctx, s.db, scan.StructMapper[models.RecordDB](),
 		`SELECT *  FROM item WHERE user_uuid = $1`, userUUID)
 
 	if err != nil {
@@ -138,8 +139,8 @@ func (s *RecordStore) FetchUserRecords(ctx context.Context, userUUID string) ([]
 	return recs, nil
 }
 
-func (s *RecordStore) FetchUserAttributes(ctx context.Context, userUUID string) ([]AttributeDB, error) {
-	recs, err := pgxscan.All(ctx, s.db, scan.StructMapper[AttributeDB](),
+func (s *RecordStore) FetchUserAttributes(ctx context.Context, userUUID string) ([]models.AttributeDB, error) {
+	recs, err := pgxscan.All(ctx, s.db, scan.StructMapper[models.AttributeDB](),
 		`SELECT a.*  FROM attribute a join item i on a.item_uuid = i.uuid WHERE i.user_uuid = $1`, userUUID)
 
 	if err != nil {
@@ -150,8 +151,8 @@ func (s *RecordStore) FetchUserAttributes(ctx context.Context, userUUID string) 
 	return recs, nil
 }
 
-func (s *RecordStore) FetchUserFilesInfos(ctx context.Context, userUUID string) ([]FileDB, error) {
-	recs, err := pgxscan.All(ctx, s.db, scan.StructMapper[FileDB](),
+func (s *RecordStore) FetchUserFilesInfos(ctx context.Context, userUUID string) ([]models.FileDB, error) {
+	recs, err := pgxscan.All(ctx, s.db, scan.StructMapper[models.FileDB](),
 		`SELECT f.*  FROM file f join item i on f.item_uuid = i.uuid WHERE i.user_uuid = $1`, userUUID)
 
 	if err != nil {
